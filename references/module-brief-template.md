@@ -6,11 +6,13 @@
 
 ## Module N: [Title]
 
+**Flavor:** <vibe-coder | onboarding | pattern-learning | architecture-review | deep-understanding>
+
 ### Teaching Arc
-- **Metaphor:** [A fresh, specific metaphor — never "restaurant." See `references/content-philosophy.md` > Metaphors First]
-- **Opening hook:** [1 sentence that connects to something the learner already knows from using the app]
+- **Metaphor:** [A fresh, specific metaphor — never "restaurant." See `references/content-philosophy.md` > Metaphors First. Note: per-flavor policy varies — architecture-review prohibits metaphors entirely; pattern-learning uses them sparingly. See `references/flavors/<flavor>.md` → Section 7.]
+- **Opening hook:** [1 sentence that connects to something the learner already knows — for vibe-coder, from using the app; for onboarding, from their previous stack; for pattern-learning, from a problem they're solving; for architecture-review, from a tradeoff they recognize.]
 - **Key insight:** [The one thing the learner should walk away understanding]
-- **"Why should I care?":** [How this helps them steer AI / debug / make decisions]
+- **"Why should I care?":** [Per-flavor framing dictated by the selected flavor playbook, Section 11. For vibe-coder: steer AI / debug / make decisions. For onboarding: ship first PR without breaking things. For pattern-learning: steal this technique for your own work. For architecture-review: form a defensible opinion. For deep-understanding: better at system design in general.]
 
 ### Code Snippets (pre-extracted)
 
@@ -37,9 +39,10 @@ Check which elements this module needs. Include enough detail for the writing ag
 
 List only the sections the writing agent needs — not the whole file.
 
+- `references/flavors/<flavor>.md` → [always include — audience-dependent content rules live here]
 - `references/interactive-elements.md` → [section names, e.g., "Multiple-Choice Quizzes", "Group Chat Animation"]
 - `references/design-system.md` → [only if needed for specific tokens not in the brief]
-- `references/content-philosophy.md` → [always include — agent needs content rules]
+- `references/content-philosophy.md` → [always include — shared base layer for content rules]
 - `references/gotchas.md` → [always include — agent needs the checklist]
 
 ### Connections

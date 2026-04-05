@@ -1,6 +1,6 @@
 ---
 name: codebase-to-course
-description: "Turn any codebase into a beautiful, interactive single-page HTML course that teaches how the code works to non-technical people. Use this skill whenever someone wants to create an interactive course, tutorial, or educational walkthrough from a codebase or project. Also trigger when users mention 'turn this into a course,' 'explain this codebase interactively,' 'teach this code,' 'interactive tutorial from code,' 'codebase walkthrough,' 'learn from this codebase,' or 'make a course from this project.' This skill produces a stunning, self-contained HTML file with scroll-based navigation, animated visualizations, embedded quizzes, and code-with-plain-English side-by-side translations."
+description: "Turn any codebase into a beautiful, interactive single-page HTML course that teaches how the code works. Supports five audience flavors — non-technical vibe coders, engineers onboarding to a new codebase, engineers studying OSS projects for reusable patterns, senior engineers doing architecture reviews, and engineers wanting deep end-to-end understanding. Asks the user to pick a flavor before building. Use this skill whenever someone wants to create an interactive course, tutorial, or educational walkthrough from a codebase or project. Also trigger when users mention 'turn this into a course,' 'explain this codebase interactively,' 'teach this code,' 'interactive tutorial from code,' 'codebase walkthrough,' 'learn from this codebase,' 'make a course from this project,' 'onboard me to this repo,' 'architectural review of this codebase,' or 'learn the patterns in this project.' This skill produces a stunning, self-contained HTML file with scroll-based navigation, animated visualizations, embedded quizzes, and flavor-specific code explanation blocks."
 ---
 
 # Codebase-to-Course
@@ -22,31 +22,46 @@ When the skill is first triggered and the user hasn't specified a codebase yet, 
 
 If the user provides a GitHub link, clone the repo first (`git clone <url> /tmp/<repo-name>`) before starting the analysis. If they say "this codebase" or similar, use the current working directory.
 
+## Phase 0: Flavor Selection
+
+**Before any codebase analysis**, ask the user to pick an audience "flavor." This is mandatory on first run — never guess from trigger phrases, never default. Different audiences need fundamentally different courses, and getting this wrong means building for the wrong learner.
+
+Call the `AskUserQuestion` tool with exactly these five options:
+
+1. **Vibe Coder** — *"I'm learning without a CS background; I want to steer AI coding tools and understand code I didn't write myself."*
+2. **Onboarding** — *"I'm an engineer joining this codebase; I want to ship my first PR without breaking things."*
+3. **Pattern Learning** — *"I want to study this codebase and extract reusable techniques for my own work."*
+4. **Architecture Review** — *"I'm evaluating this codebase's architecture and want to form an opinion about its tradeoffs."*
+5. **Deep Understanding** — *"I want a thorough tour of how this system works, no specific use case."*
+
+After the user picks, **immediately read the matching playbook** at `references/flavors/<flavor>.md` and hold it in context for the rest of the session. From Phase 1 forward, every audience-dependent decision (module arc, code block style, quiz style, metaphor strategy, tooltip strategy, voice, visual density, "why should I care?" framing) defers to that playbook. The playbook is the source of truth for audience-specific rules; `references/content-philosophy.md` is the shared base layer with rules marked `[overridable]` that the playbook may tighten or replace.
+
+**"Other" fallback.** If the user picks "Other" in the AskUserQuestion and describes a goal in free text, map it to the closest flavor by keyword:
+- "contributing" / "new to" / "joining" / "first PR" / "ramp up" → **Onboarding**
+- "evaluate" / "review" / "tradeoff" / "scale" / "architecture" → **Architecture Review**
+- "how does it work" / "internals" / "tour" / "understand" / "end-to-end" → **Deep Understanding**
+- "clever" / "patterns" / "techniques" / "steal" / "learn from" / "study" → **Pattern Learning**
+- "non-technical" / "no coding background" / "vibe" → **Vibe Coder**
+
+If the mapping is ambiguous, fall back to **Deep Understanding** and announce the fallback: *"I'll use the Deep Understanding flavor since your goal doesn't fit cleanly into the specialized flavors."* Preserve the user's free-text goal verbatim and weave it into the "why should I care?" framing of every module.
+
+**Do NOT begin codebase analysis (Phase 1) until the user has picked a flavor and you have read the matching playbook.**
+
 ## Who This Is For
 
-The target learner is a **"vibe coder"** — someone who builds software by instructing AI coding tools in natural language, without a traditional CS education. They may have built this project themselves (without looking at the code), or they may have found an interesting open-source project on GitHub and want to understand how it's built. Either way, they don't yet understand what's happening under the hood.
+This skill generates courses for five audiences. The user picked one in Phase 0; the matching playbook at `references/flavors/<flavor>.md` owns all audience-dependent content rules. All rules below that reference a single audience have been moved into the playbooks.
 
-**Assume zero technical background.** Every CS concept — from variables to APIs to databases — needs to be explained in plain language as if the learner has never encountered it. No jargon without definition. No "as you probably know." The tone should be like a smart friend explaining things, not a professor lecturing.
-
-**Their goals are practical, not academic:**
-- Have enough technical knowledge to effectively **steer AI coding tools** — make better architectural and tech stack decisions
-- **Detect when AI is wrong** — spot hallucinations, catch bad patterns, know when something smells off
-- **Intervene when AI gets stuck** — break out of bug loops, debug issues, unblock themselves
-- Build more advanced software with **production-level quality and reliability**
-- Be **technically fluent** enough to discuss decisions with engineers confidently
-- **Acquire the vocabulary of software** — learn the precise technical terms so they can describe requirements clearly and unambiguously to AI coding agents (e.g., knowing to say "namespace package" instead of "shared folder thing")
-
-**They are NOT trying to become software engineers.** They want coding as a superpower that amplifies what they're already good at. They don't need to write code from scratch — they need to *read* it, *understand* it, and *direct* it.
+| Flavor | Learner | Playbook |
+|---|---|---|
+| Vibe Coder | Non-technical builder using AI coding tools | `references/flavors/vibe-coder.md` |
+| Onboarding | Engineer new to this stack, shipping first PR | `references/flavors/onboarding.md` |
+| Pattern Learning | Engineer studying an OSS project for reusable techniques | `references/flavors/pattern-learning.md` |
+| Architecture Review | Senior engineer evaluating architectural tradeoffs | `references/flavors/architecture-review.md` |
+| Deep Understanding | Engineer wanting thorough end-to-end comprehension | `references/flavors/deep-understanding.md` |
 
 ## Why This Approach Works
 
-This skill inverts traditional CS education. The old model is: memorize concepts for years → eventually build something → finally see the point (most people quit before step 3). This model is: **build something first → experience it working → now understand how it works.**
-
-The learner already has context that traditional students don't — they've *used* the app, they know what it does, they may have even described its features in natural language. The course meets them where they are: "You know that button you click? Here's what happens under the hood when you click it."
-
-Every module answers **"why should I care?"** before "how does it work?" The answer to "why should I care?" is always practical: *because this knowledge helps you steer AI better, debug faster, or make smarter architectural decisions.*
-
-The directory-based output is intentional: separating CSS/JS from content means AI never regenerates boilerplate, each module is written independently (keeping output size small and quality high), and the assembled `index.html` works offline with zero setup.
+Every flavor inverts traditional learning by meeting the learner where they already are. See your selected flavor's playbook (Section 2) for the specific framing — what motivates this audience, what they already know, and how tracing real code in the course gives them leverage. The directory-based output (separating CSS/JS from content) is intentional across all flavors: AI never regenerates boilerplate, each module is written independently to keep output size small and quality high, and the assembled `index.html` works offline with zero setup.
 
 ---
 
@@ -68,39 +83,29 @@ Before writing course HTML, deeply understand the codebase. Read all the key fil
 
 ### Phase 2: Curriculum Design
 
-Structure the course as **4-6 modules**. Most courses need 4-6. Only go to 7-8 if the codebase genuinely has that many distinct concepts worth teaching. Fewer, better modules beat more, thinner ones.
+**Read your flavor's playbook first** — `references/flavors/<your-flavor>.md` → Section 4 "Module Arc." Each flavor provides its own curated module menu, tuned to its audience's core question. The Vibe Coder playbook holds the original 7-module menu; Onboarding, Pattern Learning, Architecture Review, and Deep Understanding each have their own 4-6 module arcs. Pick the modules that best fit the codebase.
 
-The arc always starts from what the learner already knows (the user-facing behavior) and moves toward what they don't (the code underneath). Think of it as zooming in: start wide with the experience, then progressively peel back layers.
-
-| Module Position | Purpose | Why it matters for a vibe coder |
-|---|---|---|
-| 1 | "Here's what this app does — and what happens when you use it" | Start with the product (what it does, why it's interesting), then trace a core user action into the code. Grounds everything in something concrete. |
-| 2 | Meet the actors | Know which components exist so you can tell AI "put this logic in X, not Y" |
-| 3 | How the pieces talk | Understand data flow so you can debug "it's not showing up" problems |
-| 4 | The outside world (APIs, databases) | Know what's external so you can evaluate costs, rate limits, and failure modes |
-| 5 | The clever tricks | Learn patterns (caching, chunking, error handling) so you can request them from AI |
-| 6 | When things break | Build debugging intuition so you can escape AI bug loops |
-| 7 | The big picture | See the full architecture so you can make better decisions about what to build next |
-
-This is a **menu, not a checklist**. Pick the modules that serve the codebase — a simple CLI tool needs 4, not 7. Adapt the arc to the codebase's complexity.
-
-**The key principle:** Every module should connect back to a practical skill — steering AI, debugging, making decisions. If a module doesn't help the learner DO something better, cut it or reframe it until it does.
+**Shared principles across all flavors:**
+- Structure the course as **4-6 modules**. Only go higher if the codebase genuinely has that many distinct concepts worth teaching. Fewer, better modules beat more, thinner ones.
+- The arc starts from what the learner already knows and progressively peels back layers. The *specific* starting point depends on the flavor — user-facing behavior for Vibe Coder, the architectural thesis for Architecture Review, a one-line codebase thesis for Pattern Learning, etc. Your playbook tells you.
+- Every module should connect back to the flavor's core learner goal. If a module doesn't help that specific learner take the specific next action they want, cut it or reframe it.
+- This is a **menu, not a checklist** — adapt the arc to the codebase's complexity.
 
 **Each module should contain:**
 - 3-6 screens (sub-sections that flow within the module)
-- At least one code-with-English translation
+- At least one code block in the flavor-specific style (see your playbook Section 5 — Code ↔ English / Convention / Pattern name / ADR-style / Mental model)
 - At least one interactive element (quiz, visualization, or animation)
-- One or two "aha!" callout boxes with universal CS insights
-- A metaphor that grounds the technical concept in everyday life — but NEVER reuse the same metaphor across modules, and NEVER default to the "restaurant" metaphor (it's overused). Pick metaphors that organically fit the specific concept. The best metaphors feel *inevitable* for the concept, not forced.
+- One or two callout boxes with insights (framing varies per flavor — "aha!" callouts for Vibe Coder, "Transfer" callouts for Pattern Learning, "Verdict" callouts for Architecture Review, etc.)
+- A metaphor where the flavor allows it (see Section 7 of your playbook — Vibe Coder uses heavy metaphors, Onboarding and Pattern Learning use them sparingly, Architecture Review forbids them entirely, Deep Understanding uses moderate metaphors). The universal rule: **NEVER** reuse the same metaphor across modules and **NEVER** default to "restaurant."
 
-**Mandatory interactive elements (every course must include ALL of these):**
-- **Group Chat Animation** — at least one across the course. These are the iMessage/WeChat-style conversations between components. They're one of the most engaging elements and must always appear, even if you have to creatively frame a module's concept as a conversation between actors.
-- **Message Flow / Data Flow Animation** — at least one across the course. The step-by-step packet animation between actors. If the codebase has any kind of request/response, data pipeline, or multi-step process, animate it. Every codebase has data flowing somewhere — find it.
-- **Code ↔ English Translation Blocks** — at least one per module (already required above, but reiterating: this is non-negotiable).
-- **Quizzes** — at least one per module (multiple-choice, scenario, drag-and-drop, or spot-the-bug — any quiz type counts).
-- **Glossary Tooltips** — on every technical term, first use per module.
+**Mandatory interactive elements (every course, every flavor must include ALL of these):**
+- **Group Chat Animation** — at least one across the course. iMessage/WeChat-style conversations between components. Tone varies per flavor (colloquial for Vibe Coder, colleague-banter for engineer flavors), but the element itself is universal.
+- **Message Flow / Data Flow Animation** — at least one across the course. The step-by-step packet animation between actors. Labels vary per flavor (plain English for Vibe Coder, precise terms for engineer flavors).
+- **Code blocks** — at least one per module, in the **flavor-specific style** (see your playbook Section 5). The CSS/JS patterns in `references/interactive-elements.md` are shared across flavors; only the right-column content changes.
+- **Quizzes** — at least one per module, in the **flavor-specific style** (see your playbook Section 6 — scenario for Vibe Coder, procedural-fluency for Onboarding, transfer tests for Pattern Learning, critical-judgment for Architecture Review, comprehension-tracing for Deep Understanding).
+- **Glossary Tooltips** — on every technical term on first use per module. **Scope varies per flavor** (ultra-aggressive for Vibe Coder, stack-specific for Onboarding, pattern-names for Pattern Learning, stingy for Architecture Review, generous for Deep Understanding). See your playbook Section 8.
 
-These five element types are the backbone of every course. Other interactive elements (architecture diagrams, layer toggles, pattern cards, etc.) are optional and should be added when they fit. But the five above must ALWAYS be present — no exceptions.
+These five element types are the backbone of every course in every flavor. Other interactive elements (architecture diagrams, layer toggles, pattern cards, etc.) are optional and should be added when they fit. But the five above must ALWAYS be present — no exceptions.
 
 **Do NOT present the curriculum for approval — just build it.** The user wants a course, not a planning document. Design the curriculum internally, then go straight to building. If they want changes, they'll tell you after seeing the result.
 
@@ -113,12 +118,13 @@ These five element types are the backbone of every course. Other interactive ele
 
 For complex codebases, write a brief for each module before writing any HTML. This is the critical step that enables parallel writing — each brief gives an agent everything it needs without re-reading the codebase.
 
-Read `references/module-brief-template.md` for the template structure. Read `references/content-philosophy.md` for the content rules that should guide brief writing.
+Read `references/module-brief-template.md` for the template structure. Read `references/content-philosophy.md` for the shared base rules and your selected playbook at `references/flavors/<flavor>.md` for the flavor-specific rules that should guide brief writing.
 
 **For each module, write a brief to `course-name/briefs/0N-slug.md` containing:**
-- Teaching arc (metaphor, opening hook, key insight)
+- **`Flavor:` field at the top** (matches the flavor picked in Phase 0) — writing agents use this to know which playbook to read
+- Teaching arc (metaphor, opening hook, key insight — note that metaphor policy and "why should I care?" framing vary per flavor)
 - Pre-extracted code snippets (copy-pasted from the codebase with file paths and line numbers)
-- Interactive elements checklist with enough detail to build them
+- Interactive elements checklist with enough detail to build them (including which code-block style to use — per your flavor's Section 5)
 - Which sections of which reference files the writing agent needs
 - What the previous and next modules cover (for transitions)
 
@@ -159,20 +165,21 @@ course-name/
 
 #### Sequential path (simple codebases)
 
-Read `references/content-philosophy.md` and `references/gotchas.md`. Then write modules one at a time. For each module, write `course-name/modules/0N-slug.html` containing only the `<section class="module" id="module-N">` block and its contents. Do not include `<html>`, `<head>`, `<body>`, `<style>`, or `<script>` tags.
+Read `references/flavors/<your-flavor>.md`, `references/content-philosophy.md`, and `references/gotchas.md`. Then write modules one at a time. For each module, write `course-name/modules/0N-slug.html` containing only the `<section class="module" id="module-N">` block and its contents. Do not include `<html>`, `<head>`, `<body>`, `<style>`, or `<script>` tags.
 
 Read `references/interactive-elements.md` for HTML patterns for each interactive element type. Read `references/design-system.md` for visual conventions.
 
 #### Parallel path (complex codebases)
 
 Dispatch modules to subagents in batches of up to 3. Each agent receives:
-- Its module brief (from `course-name/briefs/`)
-- `references/content-philosophy.md` and `references/gotchas.md`
+- Its module brief (from `course-name/briefs/`) — brief's `Flavor:` field tells the agent which playbook is active
+- `references/flavors/<flavor>.md` — the selected flavor's playbook (audience-specific content rules)
+- `references/content-philosophy.md` and `references/gotchas.md` — shared base layer
 - Only the sections of `references/interactive-elements.md` and `references/design-system.md` listed in the brief
 
 Each agent writes its module file(s) to `course-name/modules/`. Short modules (3 screens, one quiz) can be paired — two briefs given to one agent.
 
-**What agents do NOT receive:** the full codebase (snippets are in the brief), SKILL.md, other modules' briefs, or unneeded reference file sections.
+**What agents do NOT receive:** the full codebase (snippets are in the brief), SKILL.md, other modules' briefs, **playbooks for other flavors**, or unneeded reference file sections.
 
 After all agents finish, do a quick consistency check in the main context: nav dots match modules, transitions between modules are coherent, no obvious tone shifts.
 
@@ -214,8 +221,9 @@ The visual design should feel like a **beautiful developer notebook** — warm, 
 
 The `references/` directory contains detailed specs. **Read them only when you reach the relevant phase** — not upfront. This keeps context lean.
 
-- **`references/content-philosophy.md`** — Visual density rules, metaphor guidelines, quiz design, tooltip rules, code translation guidance. Read during Phase 2.5 (briefs) and Phase 3 (writing modules).
-- **`references/gotchas.md`** — Common failure points checklist. Read during Phase 3 and Phase 4 (review).
-- **`references/module-brief-template.md`** — Template for Phase 2.5 module briefs. Read only for complex codebases using the parallel path.
-- **`references/design-system.md`** — Complete CSS custom properties, color palette, typography scale, spacing system, shadows, animations, scrollbar styling. Read during Phase 3 when writing module HTML.
-- **`references/interactive-elements.md`** — Implementation patterns for every interactive element: drag-and-drop quizzes, multiple-choice quizzes, code↔English translations, group chat animations, message flow visualizations, architecture diagrams, pattern cards, callout boxes. Read the relevant sections during Phase 3.
+- **`references/flavors/<flavor>.md`** — Audience-specific playbook for the flavor picked in Phase 0 (one of `vibe-coder.md`, `onboarding.md`, `pattern-learning.md`, `architecture-review.md`, `deep-understanding.md`). Owns the module arc, code block style, quiz style, metaphor/tooltip strategy, voice, visual density, and "why should I care?" framing for your audience. Read during Phase 0 (immediately after the user picks), Phase 2 (curriculum design), Phase 2.5 (briefs), and Phase 3 (module writing). **Read only the playbook matching the selected flavor — not the others.**
+- **`references/content-philosophy.md`** — Shared base layer: visual density rules, metaphor guidelines, quiz design, tooltip rules, code translation guidance. Rules marked `[overridable]` may be tightened or replaced by the selected flavor playbook; rules marked `[universal]` apply unchanged across all flavors. Read during Phase 2.5 (briefs) and Phase 3 (writing modules).
+- **`references/gotchas.md`** — Common failure points checklist. Includes per-flavor notes on tooltip aggressiveness and visual density. Read during Phase 3 and Phase 4 (review).
+- **`references/module-brief-template.md`** — Template for Phase 2.5 module briefs. Includes the mandatory `Flavor:` field. Read only for complex codebases using the parallel path.
+- **`references/design-system.md`** — Complete CSS custom properties, color palette, typography scale, spacing system, shadows, animations, scrollbar styling. Unchanged across all flavors. Read during Phase 3 when writing module HTML.
+- **`references/interactive-elements.md`** — Implementation patterns for every interactive element: drag-and-drop quizzes, multiple-choice quizzes, code↔English translations, group chat animations, message flow visualizations, architecture diagrams, pattern cards, callout boxes. CSS/JS/HTML patterns are shared across all flavors; only the *content* inside the elements varies per flavor (see your playbook). Read the relevant sections during Phase 3.
