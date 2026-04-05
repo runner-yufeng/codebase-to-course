@@ -10,8 +10,12 @@ Translation blocks use `overflow: hidden` for code wrapping. If tooltips use `po
 ### Not Enough Tooltips
 The most common failure is under-tooltipping. Non-technical learners don't know terms like REPL, JSON, flag, entry point, PATH, pip, namespace, function, class, module, PR, E2E, or even software names like Blender/GIMP. **Rule of thumb:** if a term wouldn't appear in everyday conversation with a non-technical friend, tooltip it. Err heavily on the side of too many. BUT: don't tooltip terms the user already knows well from their domain (e.g., AI/ML concepts for someone in AI).
 
+*Flavor note:* Under-tooltipping is the #1 failure for **Vibe Coder** and **Onboarding**. For **Pattern Learning**, the failure mode shifts to missing *pattern names* (tooltip them with short definitions + see-alsos). For **Architecture Review**, err **light**, not heavy — tooltipping senior vocabulary feels condescending; reserve tooltips for non-standard architectural terms only. For **Deep Understanding**, err generous — audience variance is high.
+
 ### Walls of Text
 The course looks like a textbook instead of an infographic. This happens when you write more than 2-3 sentences in a row without a visual break. Every screen must be at least 50% visual. Convert any list of 3+ items into cards, any sequence into step cards or flow diagrams, any code explanation into a code↔English translation block.
+
+*Flavor note:* The strict 50%-visual rule holds for **Vibe Coder**, **Onboarding**, and **Deep Understanding**. For **Pattern Learning** and **Architecture Review**, prose may run longer when the idea requires it — the real gotcha for those flavors becomes "walls of text with no visual anchors at all" (no diagrams, no code blocks, no callouts) rather than "any text block longer than 3 sentences."
 
 ### Recycled Metaphors
 Using "restaurant" or "kitchen" for everything. Every module needs its own metaphor that feels inevitable for that specific concept. If you catch yourself reaching for the same metaphor twice, stop and find one that fits the concept organically.
